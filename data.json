@@ -1,0 +1,448 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-07-30T12:00:00.000Z",
+  "updatedBy": "Roman",
+  "finance": {
+    "revenueReal": [
+      56773,
+      45824.77,
+      31400,
+      25200,
+      62129,
+      137400,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "revenueProj": [
+      null,
+      80000,
+      150000,
+      250000,
+      300000,
+      350000,
+      175000,
+      250000,
+      450000,
+      450000,
+      750000,
+      600000
+    ],
+    "marginReal": [
+      9139.43,
+      -18573.85,
+      -53805,
+      -113379,
+      30752.86,
+      68013,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "costsReal": [
+      47633.58,
+      64398.62,
+      85205,
+      138579,
+      31376.15,
+      69387,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "lastRealMonth": 5
+  },
+  "markets": [
+    {
+      "code": "FR",
+      "status": "live",
+      "label": "Actif",
+      "note": "Marché cœur — sacoche anti-vol + portefeuille RFID"
+    },
+    {
+      "code": "DE",
+      "status": "live",
+      "label": "Actif",
+      "note": "En scale — adaptation native (persona Klaus)"
+    },
+    {
+      "code": "ES",
+      "status": "prep",
+      "label": "En préparation",
+      "note": "Batch statiques 1 adapté — persona Diego P45"
+    },
+    {
+      "code": "IT",
+      "status": "idea",
+      "label": "À l'étude",
+      "note": "Prochain marché candidat après validation ES"
+    }
+  ],
+  "roles": [
+    {
+      "name": "SAV",
+      "m": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Media Buyer",
+      "m": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Designer / SEO",
+      "m": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Monteur",
+      "m": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Email mkt / CRM Manager",
+      "m": [
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Social Media Manager",
+      "m": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Créative Stratégiste",
+      "m": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "OPS Manager",
+      "m": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "o1",
+      "t": "Offre début d'année",
+      "type": "offre",
+      "start": "2026-01-02",
+      "end": "2026-01-31"
+    },
+    {
+      "id": "o2",
+      "t": "Saint-Valentin",
+      "type": "offre",
+      "start": "2026-02-01",
+      "end": "2026-02-14"
+    },
+    {
+      "id": "o3",
+      "t": "Offre d'hiver",
+      "type": "offre",
+      "start": "2026-02-15",
+      "end": "2026-03-20"
+    },
+    {
+      "id": "o4",
+      "t": "Pâques",
+      "type": "offre",
+      "start": "2026-03-30",
+      "end": "2026-04-06"
+    },
+    {
+      "id": "o5",
+      "t": "Offre de printemps",
+      "type": "offre",
+      "start": "2026-04-07",
+      "end": "2026-04-30"
+    },
+    {
+      "id": "o6",
+      "t": "French Days",
+      "type": "offre",
+      "start": "2026-04-13",
+      "end": "2026-04-14"
+    },
+    {
+      "id": "o7",
+      "t": "Ponts / week-ends prolongés",
+      "type": "offre",
+      "start": "2026-05-01",
+      "end": "2026-05-25"
+    },
+    {
+      "id": "o8",
+      "t": "Fête des mères",
+      "type": "offre",
+      "start": "2026-05-25",
+      "end": "2026-05-31"
+    },
+    {
+      "id": "o9",
+      "t": "Fête des pères",
+      "type": "offre",
+      "start": "2026-06-08",
+      "end": "2026-06-21"
+    },
+    {
+      "id": "o10",
+      "t": "Soldes d'été",
+      "type": "offre",
+      "start": "2026-06-24",
+      "end": "2026-07-21"
+    },
+    {
+      "id": "o11",
+      "t": "Offre d'été",
+      "type": "offre",
+      "start": "2026-07-22",
+      "end": "2026-08-31"
+    },
+    {
+      "id": "o12",
+      "t": "Offre rentrée",
+      "type": "offre",
+      "start": "2026-09-01",
+      "end": "2026-09-20"
+    },
+    {
+      "id": "o13",
+      "t": "Halloween",
+      "type": "offre",
+      "start": "2026-10-15",
+      "end": "2026-10-31"
+    },
+    {
+      "id": "o14",
+      "t": "BFCM — Black Friday / Cyber Monday",
+      "type": "offre",
+      "start": "2026-11-20",
+      "end": "2026-11-30"
+    },
+    {
+      "id": "o15",
+      "t": "Offre de Noël",
+      "type": "offre",
+      "start": "2026-12-01",
+      "end": "2026-12-24"
+    },
+    {
+      "id": "r0m0",
+      "t": "Recrutement SAV",
+      "type": "recrutement",
+      "start": "2026-01-01",
+      "end": null
+    },
+    {
+      "id": "r0m3",
+      "t": "Recrutement SAV",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r0m7",
+      "t": "Recrutement SAV",
+      "type": "recrutement",
+      "start": "2026-08-01",
+      "end": null
+    },
+    {
+      "id": "r1m2",
+      "t": "Recrutement Media Buyer",
+      "type": "recrutement",
+      "start": "2026-03-01",
+      "end": null
+    },
+    {
+      "id": "r1m7",
+      "t": "Recrutement Media Buyer",
+      "type": "recrutement",
+      "start": "2026-08-01",
+      "end": null
+    },
+    {
+      "id": "r2m2",
+      "t": "Recrutement Designer / SEO",
+      "type": "recrutement",
+      "start": "2026-03-01",
+      "end": null
+    },
+    {
+      "id": "r3m1",
+      "t": "Recrutement Monteur",
+      "type": "recrutement",
+      "start": "2026-02-01",
+      "end": null
+    },
+    {
+      "id": "r3m3",
+      "t": "Recrutement Monteur",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r3m4",
+      "t": "Recrutement Monteur",
+      "type": "recrutement",
+      "start": "2026-05-01",
+      "end": null
+    },
+    {
+      "id": "r3m7",
+      "t": "Recrutement Monteur ×2",
+      "type": "recrutement",
+      "start": "2026-08-01",
+      "end": null
+    },
+    {
+      "id": "r4m1",
+      "t": "Recrutement Email mkt / CRM Manager",
+      "type": "recrutement",
+      "start": "2026-02-01",
+      "end": null
+    },
+    {
+      "id": "r4m3",
+      "t": "Recrutement Email mkt / CRM Manager",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r5m1",
+      "t": "Recrutement Social Media Manager",
+      "type": "recrutement",
+      "start": "2026-02-01",
+      "end": null
+    },
+    {
+      "id": "r6m3",
+      "t": "Recrutement Créative Stratégiste",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r6m8",
+      "t": "Recrutement Créative Stratégiste",
+      "type": "recrutement",
+      "start": "2026-09-01",
+      "end": null
+    },
+    {
+      "id": "r7m8",
+      "t": "Recrutement OPS Manager",
+      "type": "recrutement",
+      "start": "2026-09-01",
+      "end": null
+    }
+  ],
+  "tasks": []
+}
