@@ -30,6 +30,26 @@
   }
   .wrap{max-width:1480px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 
+  /* ---------- sync bar ---------- */
+  .syncbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sync-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--tile)}
+  .sync-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ink-3)}
+  .sync-chip.s-ok .sync-dot{background:var(--green)}
+  .sync-chip.s-load .sync-dot,.sync-chip.s-save .sync-dot{background:var(--amber)}
+  .sync-chip.s-err{border-color:rgba(239,68,68,.5)}
+  .sync-chip.s-err .sync-dot{background:var(--red)}
+  .sync-meta{font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .sync-meta b{color:var(--ink-2);font-weight:700}
+  .sync-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .btn-ghost{background:none;border:1px solid var(--line);color:var(--ink-2);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)}
+  .btn-ghost:hover,.btn-ghost:focus-visible{border-color:var(--orange);color:var(--orange);outline:none}
+  body.readonly .addbtn,body.readonly .btn-add{opacity:.4}
+  body.readonly .ev .del,body.readonly .task .del{display:none}
+  dialog.sync code{background:var(--tile-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
+  dialog.sync ol{margin:0 0 14px 18px;font-size:12.5px;color:var(--ink-2);line-height:1.75}
+  dialog.sync a{color:var(--orange-soft)}
+  .sync-err{font-size:12px;color:#f87171;font-weight:600;margin-bottom:10px;display:none}
+
   /* ---------- generic tile ---------- */
   .tile{background:var(--tile);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
   .lbl{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
@@ -302,6 +322,9 @@
 
 <div class="wrap">
 
+  <!-- ============ SYNC BAR ============ -->
+  <div class="syncbar" id="syncbar"></div>
+
   <!-- ============ HEADER KPI ============ -->
   <header class="top" id="kpis">
     <div class="tile logo-tile">
@@ -410,7 +433,7 @@
     </div>
   </section>
 
-  <footer>Données : Forecast Nomalero 2026 (juil. = dernière mise à jour) · Événements et tâches enregistrés dans ce navigateur · Alertes : événements à J-30/J-15, tâches à J-7/J-3 et en retard</footer>
+  <footer>Source partagée : <code style="color:var(--ink-2)">data.json</code> du repo nomalero-forecast-dashboard — une seule vérité pour toute l'équipe, rafraîchie toutes les 60 s · Alertes : événements à J-30/J-15, tâches à J-7/J-3 et en retard</footer>
 </div>
 
 <div id="tooltip"></div>
@@ -446,6 +469,31 @@
     <div class="mbtns">
       <button type="button" class="btn btn-s" id="btnCancel">Annuler</button>
       <button type="submit" class="btn btn-p">Ajouter</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="syncModal" class="sync">
+  <h3>Modifier le dashboard <span>partagé</span></h3>
+  <p class="sync-err" id="syncErr"></p>
+  <p style="font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:12px">
+    La lecture est libre pour tout le monde. Pour <b>ajouter ou modifier</b> quelque chose,
+    il faut une clé d'accès personnelle au repo — elle reste dans ce navigateur et n'est jamais partagée.
+  </p>
+  <ol>
+    <li>Ouvre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
+    <li>Repository access → <b>Only select repositories</b> → <code>nomalero-forecast-dashboard</code></li>
+    <li>Permissions → Repository → <b>Contents : Read and write</b></li>
+    <li>Génère la clé, copie-la et colle-la ci-dessous.</li>
+  </ol>
+  <form method="dialog" id="syncForm">
+    <div class="field">
+      <label for="syncTok">Clé d'accès (token)</label>
+      <input id="syncTok" type="password" autocomplete="off" placeholder="github_pat_… ou ghp_…" required>
+    </div>
+    <div class="mbtns">
+      <button type="button" class="btn btn-s" id="syncCancel">Fermer</button>
+      <button type="submit" class="btn btn-p" id="syncSave">Activer la modification</button>
     </div>
   </form>
 </dialog>
@@ -489,64 +537,562 @@
   </form>
 </dialog>
 
+<script type="application/json" id="bootData">
+{
+  "schema": 1,
+  "updatedAt": "2026-07-30T12:00:00.000Z",
+  "updatedBy": "Roman",
+  "finance": {
+    "revenueReal": [
+      56773,
+      45824.77,
+      31400,
+      25200,
+      62129,
+      137400,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "revenueProj": [
+      null,
+      80000,
+      150000,
+      250000,
+      300000,
+      350000,
+      175000,
+      250000,
+      450000,
+      450000,
+      750000,
+      600000
+    ],
+    "marginReal": [
+      9139.43,
+      -18573.85,
+      -53805,
+      -113379,
+      30752.86,
+      68013,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "costsReal": [
+      47633.58,
+      64398.62,
+      85205,
+      138579,
+      31376.15,
+      69387,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "lastRealMonth": 5
+  },
+  "markets": [
+    {
+      "code": "FR",
+      "status": "live",
+      "label": "Actif",
+      "note": "Marché cœur — sacoche anti-vol + portefeuille RFID"
+    },
+    {
+      "code": "DE",
+      "status": "live",
+      "label": "Actif",
+      "note": "En scale — adaptation native (persona Klaus)"
+    },
+    {
+      "code": "ES",
+      "status": "prep",
+      "label": "En préparation",
+      "note": "Batch statiques 1 adapté — persona Diego P45"
+    },
+    {
+      "code": "IT",
+      "status": "idea",
+      "label": "À l'étude",
+      "note": "Prochain marché candidat après validation ES"
+    }
+  ],
+  "roles": [
+    {
+      "name": "SAV",
+      "m": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Media Buyer",
+      "m": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Designer / SEO",
+      "m": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Monteur",
+      "m": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Email mkt / CRM Manager",
+      "m": [
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Social Media Manager",
+      "m": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Créative Stratégiste",
+      "m": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "OPS Manager",
+      "m": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "o1",
+      "t": "Offre début d'année",
+      "type": "offre",
+      "start": "2026-01-02",
+      "end": "2026-01-31"
+    },
+    {
+      "id": "o2",
+      "t": "Saint-Valentin",
+      "type": "offre",
+      "start": "2026-02-01",
+      "end": "2026-02-14"
+    },
+    {
+      "id": "o3",
+      "t": "Offre d'hiver",
+      "type": "offre",
+      "start": "2026-02-15",
+      "end": "2026-03-20"
+    },
+    {
+      "id": "o4",
+      "t": "Pâques",
+      "type": "offre",
+      "start": "2026-03-30",
+      "end": "2026-04-06"
+    },
+    {
+      "id": "o5",
+      "t": "Offre de printemps",
+      "type": "offre",
+      "start": "2026-04-07",
+      "end": "2026-04-30"
+    },
+    {
+      "id": "o6",
+      "t": "French Days",
+      "type": "offre",
+      "start": "2026-04-13",
+      "end": "2026-04-14"
+    },
+    {
+      "id": "o7",
+      "t": "Ponts / week-ends prolongés",
+      "type": "offre",
+      "start": "2026-05-01",
+      "end": "2026-05-25"
+    },
+    {
+      "id": "o8",
+      "t": "Fête des mères",
+      "type": "offre",
+      "start": "2026-05-25",
+      "end": "2026-05-31"
+    },
+    {
+      "id": "o9",
+      "t": "Fête des pères",
+      "type": "offre",
+      "start": "2026-06-08",
+      "end": "2026-06-21"
+    },
+    {
+      "id": "o10",
+      "t": "Soldes d'été",
+      "type": "offre",
+      "start": "2026-06-24",
+      "end": "2026-07-21"
+    },
+    {
+      "id": "o11",
+      "t": "Offre d'été",
+      "type": "offre",
+      "start": "2026-07-22",
+      "end": "2026-08-31"
+    },
+    {
+      "id": "o12",
+      "t": "Offre rentrée",
+      "type": "offre",
+      "start": "2026-09-01",
+      "end": "2026-09-20"
+    },
+    {
+      "id": "o13",
+      "t": "Halloween",
+      "type": "offre",
+      "start": "2026-10-15",
+      "end": "2026-10-31"
+    },
+    {
+      "id": "o14",
+      "t": "BFCM — Black Friday / Cyber Monday",
+      "type": "offre",
+      "start": "2026-11-20",
+      "end": "2026-11-30"
+    },
+    {
+      "id": "o15",
+      "t": "Offre de Noël",
+      "type": "offre",
+      "start": "2026-12-01",
+      "end": "2026-12-24"
+    },
+    {
+      "id": "r0m0",
+      "t": "Recrutement SAV",
+      "type": "recrutement",
+      "start": "2026-01-01",
+      "end": null
+    },
+    {
+      "id": "r0m3",
+      "t": "Recrutement SAV",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r0m7",
+      "t": "Recrutement SAV",
+      "type": "recrutement",
+      "start": "2026-08-01",
+      "end": null
+    },
+    {
+      "id": "r1m2",
+      "t": "Recrutement Media Buyer",
+      "type": "recrutement",
+      "start": "2026-03-01",
+      "end": null
+    },
+    {
+      "id": "r1m7",
+      "t": "Recrutement Media Buyer",
+      "type": "recrutement",
+      "start": "2026-08-01",
+      "end": null
+    },
+    {
+      "id": "r2m2",
+      "t": "Recrutement Designer / SEO",
+      "type": "recrutement",
+      "start": "2026-03-01",
+      "end": null
+    },
+    {
+      "id": "r3m1",
+      "t": "Recrutement Monteur",
+      "type": "recrutement",
+      "start": "2026-02-01",
+      "end": null
+    },
+    {
+      "id": "r3m3",
+      "t": "Recrutement Monteur",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r3m4",
+      "t": "Recrutement Monteur",
+      "type": "recrutement",
+      "start": "2026-05-01",
+      "end": null
+    },
+    {
+      "id": "r3m7",
+      "t": "Recrutement Monteur ×2",
+      "type": "recrutement",
+      "start": "2026-08-01",
+      "end": null
+    },
+    {
+      "id": "r4m1",
+      "t": "Recrutement Email mkt / CRM Manager",
+      "type": "recrutement",
+      "start": "2026-02-01",
+      "end": null
+    },
+    {
+      "id": "r4m3",
+      "t": "Recrutement Email mkt / CRM Manager",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r5m1",
+      "t": "Recrutement Social Media Manager",
+      "type": "recrutement",
+      "start": "2026-02-01",
+      "end": null
+    },
+    {
+      "id": "r6m3",
+      "t": "Recrutement Créative Stratégiste",
+      "type": "recrutement",
+      "start": "2026-04-01",
+      "end": null
+    },
+    {
+      "id": "r6m8",
+      "t": "Recrutement Créative Stratégiste",
+      "type": "recrutement",
+      "start": "2026-09-01",
+      "end": null
+    },
+    {
+      "id": "r7m8",
+      "t": "Recrutement OPS Manager",
+      "type": "recrutement",
+      "start": "2026-09-01",
+      "end": null
+    }
+  ],
+  "tasks": []
+}
+</script>
+
 <script>
-/* ==================== DONNÉES (source : Forecast Nomalero 2026) ==================== */
+/* ==================== CONSTANTES ==================== */
 const MONTHS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 const MABBR  = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
 
-const REVENUE_REAL = [56773, 45824.77, 31400, 25200, 62129, 137400, null, null, null, null, null, null];
-const REVENUE_PROJ = [null, 80000, 150000, 250000, 300000, 350000, 175000, 250000, 450000, 450000, 750000, 600000];
-const MARGIN_REAL  = [9139.43, -18573.85, -53805, -113379, 30752.86, 68013, null, null, null, null, null, null];
-const COSTS_REAL   = [47633.58, 64398.62, 85205, 138579, 31376.15, 69387, null, null, null, null, null, null];
-const LAST_REAL_M  = 5; // index de juin = dernier mois réel
+/* ==================== SOURCE DE VÉRITÉ PARTAGÉE ====================
+   Tout le monde lit et écrit le même fichier data.json dans le repo GitHub.
+   Lecture : publique, sans rien installer. Écriture : nécessite un token
+   personnel (stocké uniquement dans le navigateur de la personne). */
+const REPO = {owner:"Romannh06", repo:"nomalero-forecast-dashboard", path:"data.json", branch:"main"};
+const TOK_KEY = "nomalero_gh_token", USER_KEY = "nomalero_gh_user", CACHE_KEY = "nomalero_cache_v2";
+const API = "https://api.github.com/repos/"+REPO.owner+"/"+REPO.repo+"/contents/"+REPO.path;
 
-const ROLES = [
-  {name:"SAV",                     m:[1,0,0,1,0,0,0,1,0,0,0,0]},
-  {name:"Media Buyer",             m:[0,0,1,0,0,0,0,1,0,0,0,0]},
-  {name:"Designer / SEO",          m:[0,0,1,0,0,0,0,0,0,0,0,0]},
-  {name:"Monteur",                 m:[0,1,0,1,1,0,0,2,0,0,0,0]},
-  {name:"Email mkt / CRM Manager", m:[0,1,0,1,0,0,0,0,0,0,0,0]},
-  {name:"Social Media Manager",    m:[0,1,0,0,0,0,0,0,0,0,0,0]},
-  {name:"Créative Stratégiste",    m:[0,0,0,1,0,0,0,0,1,0,0,0]},
-  {name:"OPS Manager",             m:[0,0,0,0,0,0,0,0,1,0,0,0]},
-];
-const HIRES_BY_MONTH = MONTHS.map((_,i)=>ROLES.reduce((s,r)=>s+r.m[i],0));
-const TOTAL_HIRES = HIRES_BY_MONTH.reduce((a,b)=>a+b,0);
+const DEFAULTS = JSON.parse(document.getElementById("bootData").textContent);
+let DATA = null, remoteSha = null, syncState = "load", syncDetail = "";
+const token  = ()=>localStorage.getItem(TOK_KEY) || "";
+const whoAmI = ()=>localStorage.getItem(USER_KEY) || "quelqu'un";
+const canEdit = ()=>!!token();
 
-/* Événements pré-remplis depuis le calendrier marketing du forecast */
-const SEED = [
-  {id:"o1", t:"Offre début d'année",        type:"offre", start:"2026-01-02", end:"2026-01-31"},
-  {id:"o2", t:"Saint-Valentin",             type:"offre", start:"2026-02-01", end:"2026-02-14"},
-  {id:"o3", t:"Offre d'hiver",              type:"offre", start:"2026-02-15", end:"2026-03-20"},
-  {id:"o4", t:"Pâques",                     type:"offre", start:"2026-03-30", end:"2026-04-06"},
-  {id:"o5", t:"Offre de printemps",         type:"offre", start:"2026-04-07", end:"2026-04-30"},
-  {id:"o6", t:"French Days",                type:"offre", start:"2026-04-13", end:"2026-04-14"},
-  {id:"o7", t:"Ponts / week-ends prolongés",type:"offre", start:"2026-05-01", end:"2026-05-25"},
-  {id:"o8", t:"Fête des mères",             type:"offre", start:"2026-05-25", end:"2026-05-31"},
-  {id:"o9", t:"Fête des pères",             type:"offre", start:"2026-06-08", end:"2026-06-21"},
-  {id:"o10",t:"Soldes d'été",               type:"offre", start:"2026-06-24", end:"2026-07-21"},
-  {id:"o11",t:"Offre d'été",                type:"offre", start:"2026-07-22", end:"2026-08-31"},
-  {id:"o12",t:"Offre rentrée",              type:"offre", start:"2026-09-01", end:"2026-09-20"},
-  {id:"o13",t:"Halloween",                  type:"offre", start:"2026-10-15", end:"2026-10-31"},
-  {id:"o14",t:"BFCM — Black Friday / Cyber Monday", type:"offre", start:"2026-11-20", end:"2026-11-30"},
-  {id:"o15",t:"Offre de Noël",              type:"offre", start:"2026-12-01", end:"2026-12-24"},
-];
-ROLES.forEach((r,ri)=>r.m.forEach((n,mi)=>{
-  if(n>0) SEED.push({
-    id:"r"+ri+"m"+mi,
-    t:"Recrutement "+r.name+(n>1?" ×"+n:""),
-    type:"recrutement",
-    start:"2026-"+String(mi+1).padStart(2,"0")+"-01", end:null
+/* séries dérivées, recalculées à chaque chargement de données */
+let REVENUE_REAL, REVENUE_PROJ, MARGIN_REAL, COSTS_REAL, LAST_REAL_M, ROLES, HIRES_BY_MONTH, TOTAL_HIRES;
+function applyData(){
+  const f = DATA.finance;
+  REVENUE_REAL = f.revenueReal; REVENUE_PROJ = f.revenueProj;
+  MARGIN_REAL  = f.marginReal;  COSTS_REAL   = f.costsReal;
+  LAST_REAL_M  = f.lastRealMonth;
+  ROLES = DATA.roles;
+  if(!DATA.tasks) DATA.tasks = [];
+  if(!DATA.events) DATA.events = [];
+  HIRES_BY_MONTH = MONTHS.map((_,i)=>ROLES.reduce((s,r)=>s+(r.m[i]||0),0));
+  TOTAL_HIRES = HIRES_BY_MONTH.reduce((a,b)=>a+b,0);
+}
+const allEvents = ()=>DATA.events;
+
+/* --- encodage base64 compatible accents --- */
+const b64enc = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g,"")), c=>c.charCodeAt(0)));
+
+async function ghRead(){
+  const h = {"Accept":"application/vnd.github+json"};
+  if(token()) h.Authorization = "Bearer "+token();
+  const r = await fetch(API+"?ref="+REPO.branch+"&cb="+Date.now(), {headers:h, cache:"no-store"});
+  if(r.status === 404) return {missing:true};
+  if(!r.ok) throw Object.assign(new Error("Lecture impossible (HTTP "+r.status+")"), {status:r.status});
+  const j = await r.json();
+  return {data: JSON.parse(b64dec(j.content)), sha: j.sha};
+}
+async function ghWrite(obj, sha, message){
+  const r = await fetch(API, {
+    method:"PUT",
+    headers:{"Accept":"application/vnd.github+json","Content-Type":"application/json","Authorization":"Bearer "+token()},
+    body: JSON.stringify({message, content: b64enc(JSON.stringify(obj,null,2)+"\n"), branch: REPO.branch, ...(sha?{sha}:{})})
   });
-}));
+  if(!r.ok){
+    const t = await r.text().catch(()=>"");
+    if(r.status===401) throw new Error("Token refusé — il a peut-être expiré.");
+    if(r.status===403) throw new Error("Token sans droit d'écriture sur ce repo.");
+    if(r.status===409 || r.status===422) throw new Error("Conflit d'écriture — recharge la page et réessaie.");
+    throw new Error("Écriture impossible (HTTP "+r.status+") "+t.slice(0,120));
+  }
+  return r.json();
+}
 
-/* ==================== ÉTAT LOCAL (ajouts / suppressions) ==================== */
-const LS_KEY = "nomalero_forecast_2026_v1";
-let store = {custom:[], removed:[], tasks:[]};
-try{ const s = JSON.parse(localStorage.getItem(LS_KEY)); if(s && s.custom) store = s; }catch(e){}
-if(!store.tasks) store.tasks = [];
-const save = ()=>localStorage.setItem(LS_KEY, JSON.stringify(store));
-const allEvents = ()=>SEED.filter(e=>!store.removed.includes(e.id)).concat(store.custom);
+/* Applique une modification en local, puis l'écrit dans le fichier partagé.
+   Si quelqu'un a écrit entre-temps, on repart de sa version et on rejoue
+   la modification par-dessus — rien n'est écrasé. */
+async function mutate(fn, message){
+  if(!canEdit()){ renderAll(); openSyncDialog("Active la modification pour pouvoir changer le dashboard partagé."); return; }
+  fn(DATA); applyData(); renderAll();
+  setSync("save");
+  try{
+    const cur = await ghRead();
+    if(!cur.missing && cur.sha !== remoteSha){
+      DATA = cur.data; remoteSha = cur.sha; applyData(); fn(DATA);
+    }
+    DATA.updatedAt = new Date().toISOString();
+    DATA.updatedBy = whoAmI();
+    const res = await ghWrite(DATA, cur.missing?null:cur.sha, message+" — via dashboard ("+whoAmI()+")");
+    remoteSha = res.content.sha;
+    cacheLocal();
+    setSync("ok");
+  }catch(e){ setSync("err", e.message); }
+  applyData(); renderAll();
+}
+
+const cacheLocal = ()=>{ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(DATA)); }catch(e){} };
+
+async function pullRemote(silent){
+  if(!silent) setSync("load");
+  try{
+    const r = await ghRead();
+    if(r.missing){ throw new Error("Fichier partagé absent du repo."); }
+    if(r.sha !== remoteSha){
+      DATA = r.data; remoteSha = r.sha; applyData(); cacheLocal(); renderAll();
+    }
+    setSync("ok");
+  }catch(e){
+    if(!DATA){
+      let cached = null;
+      try{ cached = JSON.parse(localStorage.getItem(CACHE_KEY)); }catch(_){}
+      DATA = cached || DEFAULTS; applyData(); renderAll();
+    }
+    setSync("err", e.message);
+  }
+}
 
 /* ==================== HELPERS ==================== */
 const TODAY = new Date(); TODAY.setHours(0,0,0,0);
@@ -563,30 +1109,110 @@ const el = (tag,cls,html)=>{const n=document.createElement(tag); if(cls)n.classN
 const esc = s => s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const TYPE_LABEL = {offre:"Offre", recrutement:"Recrutement", produit:"Lancement produit", marche:"Nouveau marché"};
 
+/* ==================== BARRE DE SYNCHRONISATION ==================== */
+function setSync(state, detail){ syncState = state; syncDetail = detail||""; renderSyncBar(); }
+
+const AGO = iso => {
+  if(!iso) return "";
+  const s = Math.round((Date.now()-new Date(iso).getTime())/1000);
+  if(s < 60) return "à l'instant";
+  if(s < 3600) return "il y a "+Math.round(s/60)+" min";
+  if(s < 86400) return "il y a "+Math.round(s/3600)+" h";
+  return "le "+new Date(iso).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+};
+
+function renderSyncBar(){
+  const bar = document.getElementById("syncbar");
+  if(!bar) return;
+  const label = {ok:"Synchronisé", load:"Chargement…", save:"Enregistrement…", err:"Hors ligne"}[syncState] || "";
+  bar.innerHTML =
+    '<span class="sync-chip s-'+syncState+'"><i class="sync-dot"></i>'+label+'</span>' +
+    (syncState==="err"
+      ? '<span class="sync-meta">'+esc(syncDetail||"source partagée injoignable")+' — affichage des dernières données connues</span>'
+      : '<span class="sync-meta">Dernière modification '+esc(AGO(DATA&&DATA.updatedAt))+
+        (DATA&&DATA.updatedBy?' par <b>'+esc(DATA.updatedBy)+'</b>':'')+'</span>');
+  const actions = el("div","sync-actions");
+  const reload = el("button","btn-ghost","Actualiser");
+  reload.addEventListener("click",()=>pullRemote());
+  actions.append(reload);
+  if(canEdit()){
+    const who = el("span","sync-meta","Connecté : <b>"+esc(whoAmI())+"</b>");
+    const out = el("button","btn-ghost","Se déconnecter");
+    out.addEventListener("click",()=>{
+      localStorage.removeItem(TOK_KEY); localStorage.removeItem(USER_KEY); renderAll();
+    });
+    actions.append(who, out);
+  } else {
+    const inb = el("button","btn-ghost","🔒 Lecture seule — activer la modification");
+    inb.addEventListener("click",()=>openSyncDialog());
+    actions.append(inb);
+  }
+  bar.append(actions);
+}
+
+const syncModal = document.getElementById("syncModal");
+function openSyncDialog(msg){
+  const e = document.getElementById("syncErr");
+  e.style.display = msg ? "block" : "none";
+  e.textContent = msg || "";
+  document.getElementById("syncForm").reset();
+  syncModal.showModal();
+}
+document.getElementById("syncCancel").addEventListener("click",()=>syncModal.close());
+document.getElementById("syncForm").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const tok = document.getElementById("syncTok").value.trim();
+  const btn = document.getElementById("syncSave");
+  const err = document.getElementById("syncErr");
+  if(!tok) return;
+  btn.disabled = true; btn.textContent = "Vérification…";
+  try{
+    const r = await fetch("https://api.github.com/user",{headers:{Authorization:"Bearer "+tok,Accept:"application/vnd.github+json"}});
+    if(!r.ok) throw new Error("Clé refusée par GitHub — vérifie qu'elle est bien copiée en entier.");
+    const u = await r.json();
+    localStorage.setItem(TOK_KEY, tok);
+    localStorage.setItem(USER_KEY, u.login || "inconnu");
+    syncModal.close();
+    await pullRemote();
+    renderAll();
+  }catch(e2){
+    err.style.display = "block"; err.textContent = e2.message;
+  }finally{
+    btn.disabled = false; btn.textContent = "Activer la modification";
+  }
+});
+
 /* ==================== KPI HEADER ==================== */
-(function(){
+function renderKPI(){
+  document.querySelectorAll("#kpis .kpi").forEach(n=>n.remove());
   const ytdReal  = REVENUE_REAL.slice(0,LAST_REAL_M+1).reduce((a,b)=>a+(b||0),0);
   const ytdProj  = REVENUE_PROJ.slice(0,LAST_REAL_M+1).reduce((a,b)=>a+(b||0),0);
   const ytdCosts = COSTS_REAL.slice(0,LAST_REAL_M+1).reduce((a,b)=>a+(b||0),0);
   const ytdMargin= MARGIN_REAL.slice(0,LAST_REAL_M+1).reduce((a,b)=>a+(b||0),0);
   const projTotal= REVENUE_PROJ.reduce((a,b)=>a+(b||0),0);
-  const juneReal = REVENUE_REAL[5], juneMargin = MARGIN_REAL[5];
-  const growth   = (REVENUE_REAL[5]-REVENUE_REAL[4])/REVENUE_REAL[4]*100;
-  const nowM = TODAY.getFullYear()===2026 ? TODAY.getMonth() : 6;
+  const L = LAST_REAL_M;                    // dernier mois clôturé
+  const lastReal = REVENUE_REAL[L], lastMargin = MARGIN_REAL[L];
+  const prevReal = L>0 ? REVENUE_REAL[L-1] : null;
+  const growth   = prevReal ? (lastReal-prevReal)/prevReal*100 : null;
+  const nextM    = Math.min(11, L+1);
+  const bestM    = REVENUE_REAL.reduce((b,v,i)=> v!=null && (b<0 || v>REVENUE_REAL[b]) ? i : b, -1);
+  const marginPct= lastReal ? lastMargin/lastReal*100 : 0;
+  const nowM = TODAY.getFullYear()===2026 ? TODAY.getMonth() : nextM;
   const hiresLeft = HIRES_BY_MONTH.slice(nowM).reduce((a,b)=>a+b,0);
+  const low = s => s.toLowerCase();
 
   const tiles = [
-    ["CA Juin (réel)", fmtK(juneReal), "meilleur mois 2026", ""],
-    ["CA encaissé YTD", fmtK(ytdReal), "janv – juin", ""],
-    ["Croissance Juin", "+"+Math.round(growth)+" %", "vs mai", "pos"],
-    ["Forecast Juillet", fmtK(REVENUE_PROJ[6]), "projeté", ""],
-    ["Marge Juin", fmtK(juneMargin), "49,5 % du CA", "pos"],
+    ["CA "+MONTHS[L]+" (réel)", fmtK(lastReal), bestM===L?"meilleur mois 2026":"dernier mois clôturé", ""],
+    ["CA encaissé YTD", fmtK(ytdReal), "janv – "+low(MABBR[L]), ""],
+    ["Croissance "+MABBR[L], growth==null?"—":(growth>0?"+":"")+Math.round(growth)+" %", prevReal?"vs "+low(MABBR[L-1]):"", growth==null?"":(growth>=0?"pos":"neg")],
+    ["Forecast "+MONTHS[nextM], fmtK(REVENUE_PROJ[nextM]||0), "projeté", ""],
+    ["Marge "+MABBR[L], fmtK(lastMargin), marginPct.toFixed(1).replace(".",",")+" % du CA", lastMargin<0?"neg":"pos"],
     ["Recrutements 2026", TOTAL_HIRES, "postes au plan", ""],
     ["Coûts YTD", fmtK(ytdCosts), "mkt + prod + opex", ""],
-    ["Marge YTD", fmtK(ytdMargin), "réel janv – juin", ytdMargin<0?"neg":"pos"],
-    ["Plan YTD", fmtK(ytdProj), "projeté janv – juin", ""],
-    ["Réalisation", Math.round(ytdReal/ytdProj*100)+" %", "réel vs plan YTD", ""],
-    ["CA projeté S2", fmtK(REVENUE_PROJ.slice(6).reduce((a,b)=>a+(b||0),0)), "juil – déc", ""],
+    ["Marge YTD", fmtK(ytdMargin), "réel janv – "+low(MABBR[L]), ytdMargin<0?"neg":"pos"],
+    ["Plan YTD", fmtK(ytdProj), "projeté janv – "+low(MABBR[L]), ""],
+    ["Réalisation", ytdProj?Math.round(ytdReal/ytdProj*100)+" %":"—", "réel vs plan YTD", ""],
+    ["Reste à faire", fmtK(REVENUE_PROJ.slice(L+1).reduce((a,b)=>a+(b||0),0)), "projeté "+low(MABBR[nextM])+" – déc", ""],
     ["Postes à pourvoir", hiresLeft, "d'ici fin d'année", ""],
   ];
   const header = document.getElementById("kpis");
@@ -609,9 +1235,9 @@ const TYPE_LABEL = {offre:"Offre", recrutement:"Recrutement", produit:"Lancement
   document.getElementById("gaugeMax").textContent = fmtK(projTotal)+" projetés";
 
   /* sparkline logo */
-  const vals = REVENUE_REAL.slice(0,LAST_REAL_M+1);
-  const mx = Math.max(...vals), W=200, H=64;
-  const pts = vals.map((v,i)=>[(i/(vals.length-1))*W, H-6-(v/mx)*(H-14)]);
+  const vals = REVENUE_REAL.slice(0,LAST_REAL_M+1).map(v=>v||0);
+  const mx = Math.max(...vals,1), W=200, H=64;
+  const pts = vals.map((v,i)=>[(vals.length>1?(i/(vals.length-1)):0)*W, H-6-(v/mx)*(H-14)]);
   const line = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
   document.getElementById("spark").innerHTML =
     '<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">'+
@@ -619,7 +1245,7 @@ const TYPE_LABEL = {offre:"Offre", recrutement:"Recrutement", produit:"Lancement
     '<path d="'+line+' L '+W+' '+H+' L 0 '+H+' Z" fill="url(#sg)"/>'+
     '<path d="'+line+'" fill="none" stroke="#f97316" stroke-width="2"/>'+
     '<circle cx="'+pts[pts.length-1][0]+'" cy="'+pts[pts.length-1][1]+'" r="3.5" fill="#f97316"/>';
-})();
+}
 
 /* ==================== ALERTES + COMPTE À REBOURS ==================== */
 function renderAlerts(){
@@ -671,7 +1297,7 @@ function renderAlerts(){
   });
   /* tâches en retard ou à moins de 7 jours */
   let taskShown = 0;
-  store.tasks.slice().sort((a,b)=>D(a.due)-D(b.due)).forEach(t=>{
+  DATA.tasks.slice().sort((a,b)=>D(a.due)-D(b.due)).forEach(t=>{
     if(t.done || taskShown>=5) return;
     const d = daysTo(t.due);
     if(d>7) return;
@@ -684,17 +1310,14 @@ function renderAlerts(){
 }
 
 /* ==================== MARCHÉS & PIPELINE ==================== */
-document.getElementById("markets").innerHTML = [
-  ["FR","st-live","Actif","Marché cœur — sacoche anti-vol + portefeuille RFID"],
-  ["DE","st-live","Actif","En scale — adaptation native (persona Klaus)"],
-  ["ES","st-prep","En préparation","Batch statiques 1 adapté — persona Diego P45"],
-  ["IT","st-idea","À l'étude","Prochain marché candidat après validation ES"],
-].map(([n,st,sl,note])=>
-  '<div class="market"><div class="name">Marché '+n+'</div><div class="note">'+note+'</div>'+
-  '<span class="status '+st+'">'+sl+'</span></div>').join("");
+function renderMarkets(){
+  document.getElementById("markets").innerHTML = (DATA.markets||[]).map(m=>
+    '<div class="market"><div class="name">Marché '+esc(m.code)+'</div><div class="note">'+esc(m.note)+'</div>'+
+    '<span class="status st-'+esc(m.status)+'">'+esc(m.label)+'</span></div>').join("");
+}
 
-(function(){
-  const nowM = TODAY.getFullYear()===2026 ? TODAY.getMonth() : 6;
+function renderPipeline(){
+  const nowM = TODAY.getFullYear()===2026 ? TODAY.getMonth() : LAST_REAL_M+1;
   const waves = [];
   for(let m=nowM;m<12;m++){
     const roles = [];
@@ -707,7 +1330,7 @@ document.getElementById("markets").innerHTML = [
   ).join("") : '<div class="empty-month">Aucun recrutement restant au plan.</div>';
   const left = waves.reduce((s,[,r])=>s+r.length,0);
   document.getElementById("pipeTotal").innerHTML = "<b>"+left+"</b> postes à pourvoir d'ici décembre — sur "+TOTAL_HIRES+" au plan 2026.";
-})();
+}
 
 /* ==================== CALENDRIER ==================== */
 function renderCalendar(){
@@ -741,11 +1364,8 @@ function renderCalendar(){
       const del = el("button","del","✕");
       del.title = "Supprimer « "+e.t+" »";
       del.setAttribute("aria-label","Supprimer "+e.t);
-      del.addEventListener("click",()=>{
-        if(e.id.startsWith("c")) store.custom = store.custom.filter(x=>x.id!==e.id);
-        else store.removed.push(e.id);
-        save(); refresh();
-      });
+      del.addEventListener("click",()=>mutate(
+        d=>{ d.events = d.events.filter(x=>x.id!==e.id); }, "Suppression événement « "+e.t+" »"));
       row.append(del);
       list.append(row);
     });
@@ -760,11 +1380,6 @@ const TYPE_COLOR = {offre:"#f97316", recrutement:"#a9c1d9", produit:"#34d399", m
 const monthModal = document.getElementById("monthModal");
 let currentDetailMonth = null;
 
-function refresh(){
-  renderCalendar(); renderTasks(); renderAlerts();
-  if(monthModal.open && currentDetailMonth!=null) renderMonthModal(currentDetailMonth);
-}
-
 function openMonthModal(mi){
   currentDetailMonth = mi;
   renderMonthModal(mi);
@@ -776,7 +1391,7 @@ function renderMonthModal(mi){
   const offset = (new Date(2026, mi, 1).getDay()+6)%7; // semaine qui commence lundi
   const mStart = new Date(2026, mi, 1), mEnd = new Date(2026, mi, dim);
   const evs = allEvents().filter(e=>D(e.start)<=mEnd && D(e.end||e.start)>=mStart).sort((a,b)=>D(a.start)-D(b.start));
-  const tks = store.tasks.filter(t=>{const d=D(t.due); return d>=mStart && d<=mEnd;}).sort((a,b)=>D(a.due)-D(b.due));
+  const tks = DATA.tasks.filter(t=>{const d=D(t.due); return d>=mStart && d<=mEnd;}).sort((a,b)=>D(a.due)-D(b.due));
   const tksDone = tks.filter(t=>t.done).length;
 
   document.getElementById("mmTitle").innerHTML = MONTHS[mi]+" <span>2026</span>";
@@ -837,11 +1452,8 @@ function renderMonthModal(mi){
     const del = el("button","del","✕");
     del.title = "Supprimer « "+e.t+" »";
     del.setAttribute("aria-label","Supprimer "+e.t);
-    del.addEventListener("click",()=>{
-      if(e.id.startsWith("c")) store.custom = store.custom.filter(x=>x.id!==e.id);
-      else store.removed.push(e.id);
-      save(); refresh();
-    });
+    del.addEventListener("click",()=>mutate(
+      d=>{ d.events = d.events.filter(x=>x.id!==e.id); }, "Suppression événement « "+e.t+" »"));
     row.append(del);
     evBox.append(row);
   });
@@ -853,14 +1465,17 @@ function renderMonthModal(mi){
     const cb = el("input","tcheck");
     cb.type = "checkbox"; cb.checked = !!t.done;
     cb.setAttribute("aria-label","Marquer « "+t.t+" » comme "+(t.done?"à faire":"faite"));
-    cb.addEventListener("change",()=>{ t.done = cb.checked; save(); refresh(); });
+    cb.addEventListener("change",()=>mutate(
+      d=>{ const x = d.tasks.find(y=>y.id===t.id); if(x) x.done = cb.checked; },
+      (cb.checked?"Tâche faite":"Tâche à refaire")+" : "+t.t));
     row.append(cb);
     row.append(el("span","tt",esc(t.t)+(t.evLabel?' <small style="color:var(--ink-3)">· '+esc(t.evLabel)+'</small>':'')));
     const [cls,txt] = dueBadge(t);
     row.append(el("span","tdue "+cls,txt));
     const del = el("button","del","✕");
     del.title = "Supprimer « "+t.t+" »";
-    del.addEventListener("click",()=>{ store.tasks = store.tasks.filter(x=>x.id!==t.id); save(); refresh(); });
+    del.addEventListener("click",()=>mutate(
+        d=>{ d.tasks = d.tasks.filter(x=>x.id!==t.id); }, "Suppression tâche « "+t.t+" »"));
     row.append(del);
     tkBox.append(row);
   });
@@ -887,8 +1502,8 @@ document.getElementById("evForm").addEventListener("submit",()=>{
   if(!t || !start) return;
   let end = document.getElementById("fEnd").value || null;
   if(end && D(end)<D(start)) end = null;
-  store.custom.push({id:"c"+Date.now(), t, type:document.getElementById("fType").value, start, end});
-  save(); refresh();
+  const ev = {id:"c"+Date.now(), t, type:document.getElementById("fType").value, start, end};
+  mutate(d=>{ d.events.push(ev); }, "Ajout "+TYPE_LABEL[ev.type].toLowerCase()+" « "+t+" »");
 });
 
 /* ==================== TÂCHES DE PRÉPARATION ==================== */
@@ -905,14 +1520,14 @@ function dueBadge(task){
 function renderTasks(){
   const box = document.getElementById("taskGroups");
   box.innerHTML = "";
-  if(!store.tasks.length){
+  if(!DATA.tasks.length){
     box.append(el("div","tasks-empty",
       'Aucune tâche pour l’instant. Clique sur <b>+ Ajouter une tâche</b> — par exemple « Faire la page produit » à rattacher à un lancement, avec sa deadline.'));
     return;
   }
   /* groupes : par événement rattaché, puis tâches libres ; tri par deadline */
   const groups = new Map();
-  store.tasks.slice().sort((a,b)=>D(a.due)-D(b.due)).forEach(t=>{
+  DATA.tasks.slice().sort((a,b)=>D(a.due)-D(b.due)).forEach(t=>{
     const key = t.evLabel || NO_EVENT;
     if(!groups.has(key)) groups.set(key, {date:t.evDate||null, items:[]});
     groups.get(key).items.push(t);
@@ -935,7 +1550,9 @@ function renderTasks(){
       const cb = el("input","tcheck");
       cb.type = "checkbox"; cb.checked = !!t.done;
       cb.setAttribute("aria-label","Marquer « "+t.t+" » comme "+(t.done?"à faire":"faite"));
-      cb.addEventListener("change",()=>{ t.done = cb.checked; save(); refresh(); });
+      cb.addEventListener("change",()=>mutate(
+      d=>{ const x = d.tasks.find(y=>y.id===t.id); if(x) x.done = cb.checked; },
+      (cb.checked?"Tâche faite":"Tâche à refaire")+" : "+t.t));
       row.append(cb);
       row.append(el("span","tt",esc(t.t)));
       const [cls,txt] = dueBadge(t);
@@ -943,7 +1560,8 @@ function renderTasks(){
       const del = el("button","del","✕");
       del.title = "Supprimer « "+t.t+" »";
       del.setAttribute("aria-label","Supprimer la tâche "+t.t);
-      del.addEventListener("click",()=>{ store.tasks = store.tasks.filter(x=>x.id!==t.id); save(); refresh(); });
+      del.addEventListener("click",()=>mutate(
+        d=>{ d.tasks = d.tasks.filter(x=>x.id!==t.id); }, "Suppression tâche « "+t.t+" »"));
       row.append(del);
       grp.append(row);
     });
@@ -971,13 +1589,13 @@ document.getElementById("taskForm").addEventListener("submit",()=>{
   if(!t || !due) return;
   const evId = document.getElementById("tEvent").value;
   const ev = evId ? allEvents().find(e=>e.id===evId) : null;
-  store.tasks.push({id:"t"+Date.now(), t, due, done:false,
-    evLabel: ev?ev.t:null, evDate: ev?ev.start:null});
-  save(); refresh();
+  const task = {id:"t"+Date.now(), t, due, done:false,
+    evLabel: ev?ev.t:null, evDate: ev?ev.start:null};
+  mutate(d=>{ d.tasks.push(task); }, "Ajout tâche « "+t+" »");
 });
 
 /* ==================== HEATMAP RECRUTEMENT ==================== */
-(function(){
+function renderHeat(){
   let html = "<table><thead><tr><th>Poste</th>"+MABBR.map(m=>"<th>"+m+"</th>").join("")+"<th>Total</th></tr></thead><tbody>";
   ROLES.forEach(r=>{
     const tot = r.m.reduce((a,b)=>a+b,0);
@@ -987,7 +1605,7 @@ document.getElementById("taskForm").addEventListener("submit",()=>{
   });
   html += "</tbody><tfoot><tr><td>Total mois</td>"+HIRES_BY_MONTH.map(n=>"<td>"+(n||"·")+"</td>").join("")+"<td>"+TOTAL_HIRES+"</td></tr></tfoot></table>";
   document.getElementById("heat").innerHTML = html;
-})();
+}
 
 /* ==================== GRAPHIQUES ==================== */
 const tooltip = document.getElementById("tooltip");
@@ -1018,9 +1636,11 @@ function frame(svg,W,H,PAD,yMax,yMin,fmt){
   return {y, x:i=>PAD.l+plotW*(i+0.5)/12, slotW:plotW/12, plotH};
 }
 
+function renderCharts(){ chRevenue(); chHiring(); chMargin(); }
+
 /* --- CA réel vs projeté --- */
-(function(){
-  const svg = document.getElementById("chRevenue");
+function chRevenue(){
+  const svg = document.getElementById("chRevenue"); svg.innerHTML = "";
   const W=460,H=230,PAD={l:44,r:10,t:12,b:26};
   const mx = Math.ceil(Math.max(...REVENUE_PROJ.filter(Boolean),...REVENUE_REAL.filter(Boolean))/100000)*100000;
   const f = frame(svg,W,H,PAD,mx,0,v=>Math.round(v/1000));
@@ -1054,11 +1674,11 @@ function frame(svg,W,H,PAD,yMax,yMin,fmt){
     z.addEventListener("mouseleave",hideTip);
     svg.append(z);
   });
-})();
+}
 
 /* --- Recrutements --- */
-(function(){
-  const svg = document.getElementById("chHiring");
+function chHiring(){
+  const svg = document.getElementById("chHiring"); svg.innerHTML = "";
   const W=460,H=230,PAD={l:30,r:10,t:12,b:26};
   const f = frame(svg,W,H,PAD,5,0,v=>Math.round(v));
   HIRES_BY_MONTH.forEach((v,i)=>{
@@ -1076,14 +1696,15 @@ function frame(svg,W,H,PAD,yMax,yMin,fmt){
     z.addEventListener("mouseleave",hideTip);
     svg.append(z);
   });
-})();
+}
 
 /* --- Marge brute réelle --- */
-(function(){
-  const svg = document.getElementById("chMargin");
+function chMargin(){
+  const svg = document.getElementById("chMargin"); svg.innerHTML = "";
   const W=460,H=230,PAD={l:44,r:10,t:12,b:26};
   const vals = MARGIN_REAL.filter(v=>v!=null);
-  const mx = Math.ceil(Math.max(...vals)/20000)*20, mn = Math.floor(Math.min(...vals)/20000)*20;
+  if(!vals.length) return;
+  const mx = Math.max(Math.ceil(Math.max(...vals)/20000)*20,20), mn = Math.min(Math.floor(Math.min(...vals)/20000)*20,0);
   const f = frame(svg,W,H,PAD,mx*1000,mn*1000,v=>Math.round(v/1000));
   const y0 = f.y(0);
   svg.append(sv("line",{x1:PAD.l,x2:W-PAD.r,y1:y0,y2:y0,stroke:"#3a4a60","stroke-width":1.5}));
@@ -1101,11 +1722,24 @@ function frame(svg,W,H,PAD,yMax,yMin,fmt){
     z.addEventListener("mouseleave",hideTip);
     svg.append(z);
   });
-})();
+}
 
-renderCalendar();
-renderTasks();
-renderAlerts();
+/* ==================== RENDU GLOBAL & DÉMARRAGE ==================== */
+function renderAll(){
+  renderKPI(); renderMarkets(); renderPipeline();
+  renderCalendar(); renderTasks(); renderAlerts();
+  renderHeat(); renderCharts(); renderSyncBar();
+  document.body.classList.toggle("readonly", !canEdit());
+  if(monthModal.open && currentDetailMonth!=null) renderMonthModal(currentDetailMonth);
+}
+const refresh = renderAll;
+
+(async function boot(){
+  await pullRemote();
+  /* rafraîchissement automatique : au retour sur l'onglet + toutes les 60 s */
+  setInterval(()=>{ if(!document.hidden && syncState!=="save") pullRemote(true); }, 60000);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden && syncState!=="save") pullRemote(true); });
+})();
 </script>
 
 </html>
