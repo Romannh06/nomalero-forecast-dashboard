@@ -1000,6 +1000,7 @@ const MABBR  = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct"
 const REPO = {owner:"Romannh06", repo:"nomalero-forecast-dashboard", path:"data.json", branch:"main"};
 const TOK_KEY = "nomalero_gh_token", USER_KEY = "nomalero_gh_user", CACHE_KEY = "nomalero_cache_v2";
 const API = "https://api.github.com/repos/"+REPO.owner+"/"+REPO.repo+"/contents/"+REPO.path;
+const PAGES_URL = "https://romannh06.github.io/nomalero-forecast-dashboard/";
 
 const DEFAULTS = JSON.parse(document.getElementById("bootData").textContent);
 let DATA = null, remoteSha = null, syncState = "load", syncDetail = "";
@@ -1128,7 +1129,8 @@ function renderSyncBar(){
   bar.innerHTML =
     '<span class="sync-chip s-'+syncState+'"><i class="sync-dot"></i>'+label+'</span>' +
     (syncState==="err"
-      ? '<span class="sync-meta">'+esc(syncDetail||"source partagée injoignable")+' — affichage des dernières données connues</span>'
+      ? '<span class="sync-meta">'+esc(syncDetail||"source partagée injoignable")+' — affichage des dernières données connues. '+
+        '<a href="'+PAGES_URL+'" style="color:var(--orange-soft)">Ouvrir la version synchronisée →</a></span>'
       : '<span class="sync-meta">Dernière modification '+esc(AGO(DATA&&DATA.updatedAt))+
         (DATA&&DATA.updatedBy?' par <b>'+esc(DATA.updatedBy)+'</b>':'')+'</span>');
   const actions = el("div","sync-actions");
