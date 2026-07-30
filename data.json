@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updatedAt": "2026-07-30T14:30:00.000Z",
-  "updatedBy": "test-sync",
+  "updatedAt": "2026-07-30T12:00:00.000Z",
+  "updatedBy": "Roman",
   "finance": {
     "revenueReal": [
       56773,
@@ -444,14 +444,5 @@
       "end": null
     }
   ],
-  "tasks": [
-    {
-      "id": "ttest1",
-      "t": "TEST sync — à supprimer",
-      "due": "2026-08-05",
-      "done": false,
-      "evLabel": null,
-      "evDate": null
-    }
-  ]
+  "tasks": []
 }
