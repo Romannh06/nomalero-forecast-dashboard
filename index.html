@@ -38,16 +38,22 @@
   .sync-chip.s-load .sync-dot,.sync-chip.s-save .sync-dot{background:var(--amber)}
   .sync-chip.s-err{border-color:rgba(239,68,68,.5)}
   .sync-chip.s-err .sync-dot{background:var(--red)}
+  .sync-chip.s-pending{border-color:var(--orange);color:var(--orange-soft)}
+  .sync-chip.s-pending .sync-dot{background:var(--orange)}
+  .btn-share{background:var(--orange);border:none;color:#1a0d02;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font)}
+  .btn-share:hover,.btn-share:focus-visible{background:var(--orange-soft);outline:none}
   .sync-meta{font-size:11.5px;color:var(--ink-3);font-weight:600}
   .sync-meta b{color:var(--ink-2);font-weight:700}
   .sync-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
   .btn-ghost{background:none;border:1px solid var(--line);color:var(--ink-2);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)}
   .btn-ghost:hover,.btn-ghost:focus-visible{border-color:var(--orange);color:var(--orange);outline:none}
-  body.readonly .addbtn,body.readonly .btn-add{opacity:.4}
-  body.readonly .ev .del,body.readonly .task .del{display:none}
   dialog.sync code{background:var(--tile-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
-  dialog.sync ol{margin:0 0 14px 18px;font-size:12.5px;color:var(--ink-2);line-height:1.75}
   dialog.sync a{color:var(--orange-soft)}
+  .btn-step{display:block;background:var(--orange);color:#1a0d02;border-radius:8px;padding:11px 14px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:12px}
+  .btn-step:hover,.btn-step:focus-visible{background:var(--orange-soft);outline:none}
+  .btn-step b{font-weight:900;margin-right:4px}
+  .step-note{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:12px}
+  .step-note b:first-child{color:var(--orange-soft);font-weight:900;margin-right:2px}
   .sync-err{font-size:12px;color:#f87171;font-weight:600;margin-bottom:10px;display:none}
 
   /* ---------- generic tile ---------- */
@@ -474,28 +480,27 @@
 </dialog>
 
 <dialog id="syncModal" class="sync">
-  <h3>Modifier le dashboard <span>partagé</span></h3>
+  <h3>Partager tes modifications <span>avec l'équipe</span></h3>
   <p class="sync-err" id="syncErr"></p>
-  <p style="font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:12px">
-    La lecture est libre pour tout le monde. Pour <b>ajouter ou modifier</b> quelque chose,
-    il faut une clé d'accès personnelle au repo — elle reste dans ce navigateur et n'est jamais partagée.
+  <p style="font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:14px">
+    Tes modifications sont déjà enregistrées ici. Pour qu'Esteban les voie aussi, il faut
+    <b>une clé à créer une seule fois</b> — ensuite tout se partage tout seul, tu n'y touches plus jamais.
   </p>
-  <ol>
-    <li>Ouvre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
-    <li>Repository access → <b>Only select repositories</b> → <code>nomalero-forecast-dashboard</code></li>
-    <li>Permissions → Repository → <b>Contents : Read and write</b></li>
-    <li>Génère la clé, copie-la et colle-la ci-dessous.</li>
-  </ol>
+  <a class="btn-step" id="tokLink" href="https://github.com/settings/tokens/new?scopes=public_repo&amp;description=Dashboard%20Nomalero" target="_blank" rel="noopener">
+    <b>1.</b> Ouvrir la page GitHub (la case est déjà cochée pour toi)
+  </a>
+  <p class="step-note"><b>2.</b> Tout en bas de la page GitHub : mets <b>Expiration → No expiration</b>, puis clique le bouton vert <b>Generate token</b>.</p>
+  <p class="step-note"><b>3.</b> GitHub affiche une longue clé qui commence par <code>ghp_</code> — copie-la et colle-la ici :</p>
   <form method="dialog" id="syncForm">
     <div class="field">
-      <label for="syncTok">Clé d'accès (token)</label>
-      <input id="syncTok" type="password" autocomplete="off" placeholder="github_pat_… ou ghp_…" required>
+      <input id="syncTok" type="password" autocomplete="off" placeholder="ghp_…" required>
     </div>
     <div class="mbtns">
-      <button type="button" class="btn btn-s" id="syncCancel">Fermer</button>
-      <button type="submit" class="btn btn-p" id="syncSave">Activer la modification</button>
+      <button type="button" class="btn btn-s" id="syncCancel">Plus tard</button>
+      <button type="submit" class="btn btn-p" id="syncSave">Partager maintenant</button>
     </div>
   </form>
+  <p class="hint" style="margin-top:4px">La clé reste dans ce navigateur, sur cet ordinateur. Elle n'est jamais envoyée ailleurs ni visible par qui que ce soit.</p>
 </dialog>
 
 <dialog id="monthModal" class="mm">
@@ -1052,44 +1057,89 @@ async function ghWrite(obj, sha, message){
   return r.json();
 }
 
-/* Applique une modification en local, puis l'écrit dans le fichier partagé.
-   Si quelqu'un a écrit entre-temps, on repart de sa version et on rejoue
-   la modification par-dessus — rien n'est écrasé. */
-async function mutate(fn, message){
-  if(!canEdit()){ renderAll(); openSyncDialog("Active la modification pour pouvoir changer le dashboard partagé."); return; }
-  fn(DATA); applyData(); renderAll();
-  setSync("save");
-  try{
-    const cur = await ghRead();
-    if(!cur.missing && cur.sha !== remoteSha){
-      DATA = cur.data; remoteSha = cur.sha; applyData(); fn(DATA);
-    }
-    DATA.updatedAt = new Date().toISOString();
-    DATA.updatedBy = whoAmI();
-    const res = await ghWrite(DATA, cur.missing?null:cur.sha, message+" — via dashboard ("+whoAmI()+")");
-    remoteSha = res.content.sha;
-    cacheLocal();
-    setSync("ok");
-  }catch(e){ setSync("err", e.message); }
-  applyData(); renderAll();
+/* --- Modifications en attente ---------------------------------------------
+   Toute modification est d'abord enregistrée ici, sous forme d'opération.
+   Elle s'applique immédiatement à l'écran : le dashboard ne bloque jamais.
+   Ensuite, si la clé de partage est présente, elle part vers le fichier
+   commun. Sinon elle attend, et un bouton « Partager » s'affiche.
+   Comme on rejoue les opérations sur la version distante la plus récente,
+   les modifications de l'autre personne ne sont jamais écrasées. */
+const PENDING_KEY = "nomalero_pending_v1";
+let pending = [];
+try{ pending = JSON.parse(localStorage.getItem(PENDING_KEY)) || []; }catch(e){ pending = []; }
+const savePending = ()=>{ try{ localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); }catch(e){} };
+const cacheLocal   = ()=>{ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(baseData)); }catch(e){} };
+
+let baseData = null;   // dernière version connue du fichier partagé
+
+function applyOp(d, op){
+  if(op.k === "addEvent")  d.events.push(op.v);
+  else if(op.k === "delEvent") d.events = d.events.filter(x=>x.id !== op.id);
+  else if(op.k === "addTask")  d.tasks.push(op.v);
+  else if(op.k === "delTask")  d.tasks = d.tasks.filter(x=>x.id !== op.id);
+  else if(op.k === "setTask"){ const t = d.tasks.find(x=>x.id === op.id); if(t) t.done = op.done; }
+  return d;
+}
+/* vue = version partagée + mes modifications pas encore partagées */
+function rebuild(){
+  DATA = JSON.parse(JSON.stringify(baseData));
+  if(!DATA.events) DATA.events = [];
+  if(!DATA.tasks)  DATA.tasks  = [];
+  pending.forEach(op=>applyOp(DATA, op));
+  applyData();
 }
 
-const cacheLocal = ()=>{ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(DATA)); }catch(e){} };
+function mutate(op, label){
+  op.label = label;
+  pending.push(op); savePending();
+  rebuild(); renderAll();
+  if(canEdit()) publish();
+}
+
+let publishing = false;
+async function publish(){
+  if(!pending.length || publishing) return;
+  if(!canEdit()){ openSyncDialog(); return; }
+  publishing = true; setSync("save");
+  try{
+    const cur = await ghRead();
+    const base = cur.missing ? JSON.parse(JSON.stringify(DEFAULTS)) : cur.data;
+    if(!base.events) base.events = [];
+    if(!base.tasks)  base.tasks  = [];
+    const batch = pending.slice();
+    batch.forEach(op=>applyOp(base, op));
+    base.updatedAt = new Date().toISOString();
+    base.updatedBy = whoAmI();
+    const msg = (batch.length===1 ? batch[0].label : batch.length+" modifications")+" — via dashboard ("+whoAmI()+")";
+    const res = await ghWrite(base, cur.missing?null:cur.sha, msg);
+    remoteSha = res.content.sha;
+    baseData = base;
+    pending = pending.slice(batch.length); savePending();
+    cacheLocal(); rebuild();
+    setSync("ok");
+  }catch(e){
+    setSync("err", e.message);
+  }finally{
+    publishing = false;
+    renderAll();
+  }
+}
 
 async function pullRemote(silent){
   if(!silent) setSync("load");
   try{
     const r = await ghRead();
-    if(r.missing){ throw new Error("Fichier partagé absent du repo."); }
+    if(r.missing) throw new Error("Fichier partagé absent du repo.");
     if(r.sha !== remoteSha){
-      DATA = r.data; remoteSha = r.sha; applyData(); cacheLocal(); renderAll();
+      baseData = r.data; remoteSha = r.sha; cacheLocal(); rebuild(); renderAll();
     }
-    setSync("ok");
+    setSync(pending.length ? "pending" : "ok");
   }catch(e){
-    if(!DATA){
+    if(!baseData){
       let cached = null;
       try{ cached = JSON.parse(localStorage.getItem(CACHE_KEY)); }catch(_){}
-      DATA = cached || DEFAULTS; applyData(); renderAll();
+      baseData = cached || JSON.parse(JSON.stringify(DEFAULTS));
+      rebuild(); renderAll();
     }
     setSync("err", e.message);
   }
@@ -1125,29 +1175,39 @@ const AGO = iso => {
 function renderSyncBar(){
   const bar = document.getElementById("syncbar");
   if(!bar) return;
-  const label = {ok:"Synchronisé", load:"Chargement…", save:"Enregistrement…", err:"Hors ligne"}[syncState] || "";
-  bar.innerHTML =
-    '<span class="sync-chip s-'+syncState+'"><i class="sync-dot"></i>'+label+'</span>' +
-    (syncState==="err"
-      ? '<span class="sync-meta">'+esc(syncDetail||"source partagée injoignable")+' — affichage des dernières données connues. '+
-        '<a href="'+PAGES_URL+'" style="color:var(--orange-soft)">Ouvrir la version synchronisée →</a></span>'
-      : '<span class="sync-meta">Dernière modification '+esc(AGO(DATA&&DATA.updatedAt))+
-        (DATA&&DATA.updatedBy?' par <b>'+esc(DATA.updatedBy)+'</b>':'')+'</span>');
+  const n = pending.length;
+  const state = n && syncState!=="save" ? "pending" : syncState;
+  const label = {ok:"Partagé avec l'équipe", load:"Chargement…", save:"Partage en cours…",
+                 pending:n+" modification"+(n>1?"s":"")+" à partager", err:"Hors ligne"}[state] || "";
+  let meta;
+  if(state === "err")
+    meta = esc(syncDetail||"source partagée injoignable")+" — tes modifications sont gardées ici. "+
+           '<a href="'+PAGES_URL+'">Ouvrir la version synchronisée →</a>';
+  else if(state === "pending")
+    meta = "Visibles par toi seulement pour l'instant.";
+  else
+    meta = "Dernière modification "+esc(AGO(baseData&&baseData.updatedAt))+
+           (baseData&&baseData.updatedBy?' par <b>'+esc(baseData.updatedBy)+'</b>':'');
+
+  bar.innerHTML = '<span class="sync-chip s-'+state+'"><i class="sync-dot"></i>'+label+'</span>'+
+                  '<span class="sync-meta">'+meta+'</span>';
+
   const actions = el("div","sync-actions");
+  if(n){
+    const pub = el("button","btn-share","Partager avec l'équipe");
+    pub.addEventListener("click",()=>publish());
+    actions.append(pub);
+  }
   const reload = el("button","btn-ghost","Actualiser");
   reload.addEventListener("click",()=>pullRemote());
   actions.append(reload);
   if(canEdit()){
-    const who = el("span","sync-meta","Connecté : <b>"+esc(whoAmI())+"</b>");
-    const out = el("button","btn-ghost","Se déconnecter");
+    const out = el("button","btn-ghost","Clé active : "+esc(whoAmI()));
+    out.title = "Retirer la clé de ce navigateur";
     out.addEventListener("click",()=>{
       localStorage.removeItem(TOK_KEY); localStorage.removeItem(USER_KEY); renderAll();
     });
-    actions.append(who, out);
-  } else {
-    const inb = el("button","btn-ghost","🔒 Lecture seule — activer la modification");
-    inb.addEventListener("click",()=>openSyncDialog());
-    actions.append(inb);
+    actions.append(out);
   }
   bar.append(actions);
 }
@@ -1169,18 +1229,24 @@ document.getElementById("syncForm").addEventListener("submit",async ev=>{
   if(!tok) return;
   btn.disabled = true; btn.textContent = "Vérification…";
   try{
-    const r = await fetch("https://api.github.com/user",{headers:{Authorization:"Bearer "+tok,Accept:"application/vnd.github+json"}});
-    if(!r.ok) throw new Error("Clé refusée par GitHub — vérifie qu'elle est bien copiée en entier.");
+    const h = {Authorization:"Bearer "+tok, Accept:"application/vnd.github+json"};
+    const r = await fetch("https://api.github.com/user",{headers:h});
+    if(!r.ok) throw new Error("Clé refusée par GitHub. Vérifie que tu as bien copié la clé entière (elle commence par ghp_), sans espace avant ou après.");
     const u = await r.json();
+    const rr = await fetch("https://api.github.com/repos/"+REPO.owner+"/"+REPO.repo,{headers:h});
+    if(!rr.ok) throw new Error("Cette clé ne donne pas accès au dashboard. Vérifie que la case « public_repo » était bien cochée.");
+    const repo = await rr.json();
+    if(!(repo.permissions && repo.permissions.push))
+      throw new Error("Le compte « "+(u.login||"?")+" » n'a pas le droit de modifier le dashboard. Demande à Roman de t'ajouter comme collaborateur du repo.");
     localStorage.setItem(TOK_KEY, tok);
     localStorage.setItem(USER_KEY, u.login || "inconnu");
     syncModal.close();
-    await pullRemote();
+    if(pending.length) await publish(); else await pullRemote();
     renderAll();
   }catch(e2){
     err.style.display = "block"; err.textContent = e2.message;
   }finally{
-    btn.disabled = false; btn.textContent = "Activer la modification";
+    btn.disabled = false; btn.textContent = "Partager maintenant";
   }
 });
 
@@ -1366,8 +1432,7 @@ function renderCalendar(){
       const del = el("button","del","✕");
       del.title = "Supprimer « "+e.t+" »";
       del.setAttribute("aria-label","Supprimer "+e.t);
-      del.addEventListener("click",()=>mutate(
-        d=>{ d.events = d.events.filter(x=>x.id!==e.id); }, "Suppression événement « "+e.t+" »"));
+      del.addEventListener("click",()=>mutate({k:"delEvent", id:e.id}, "Suppression événement « "+e.t+" »"));
       row.append(del);
       list.append(row);
     });
@@ -1454,8 +1519,7 @@ function renderMonthModal(mi){
     const del = el("button","del","✕");
     del.title = "Supprimer « "+e.t+" »";
     del.setAttribute("aria-label","Supprimer "+e.t);
-    del.addEventListener("click",()=>mutate(
-      d=>{ d.events = d.events.filter(x=>x.id!==e.id); }, "Suppression événement « "+e.t+" »"));
+    del.addEventListener("click",()=>mutate({k:"delEvent", id:e.id}, "Suppression événement « "+e.t+" »"));
     row.append(del);
     evBox.append(row);
   });
@@ -1467,17 +1531,14 @@ function renderMonthModal(mi){
     const cb = el("input","tcheck");
     cb.type = "checkbox"; cb.checked = !!t.done;
     cb.setAttribute("aria-label","Marquer « "+t.t+" » comme "+(t.done?"à faire":"faite"));
-    cb.addEventListener("change",()=>mutate(
-      d=>{ const x = d.tasks.find(y=>y.id===t.id); if(x) x.done = cb.checked; },
-      (cb.checked?"Tâche faite":"Tâche à refaire")+" : "+t.t));
+    cb.addEventListener("change",()=>mutate({k:"setTask", id:t.id, done:cb.checked}, (cb.checked?"Tâche faite":"Tâche à refaire")+" : "+t.t));
     row.append(cb);
     row.append(el("span","tt",esc(t.t)+(t.evLabel?' <small style="color:var(--ink-3)">· '+esc(t.evLabel)+'</small>':'')));
     const [cls,txt] = dueBadge(t);
     row.append(el("span","tdue "+cls,txt));
     const del = el("button","del","✕");
     del.title = "Supprimer « "+t.t+" »";
-    del.addEventListener("click",()=>mutate(
-        d=>{ d.tasks = d.tasks.filter(x=>x.id!==t.id); }, "Suppression tâche « "+t.t+" »"));
+    del.addEventListener("click",()=>mutate({k:"delTask", id:t.id}, "Suppression tâche « "+t.t+" »"));
     row.append(del);
     tkBox.append(row);
   });
@@ -1505,7 +1566,7 @@ document.getElementById("evForm").addEventListener("submit",()=>{
   let end = document.getElementById("fEnd").value || null;
   if(end && D(end)<D(start)) end = null;
   const ev = {id:"c"+Date.now(), t, type:document.getElementById("fType").value, start, end};
-  mutate(d=>{ d.events.push(ev); }, "Ajout "+TYPE_LABEL[ev.type].toLowerCase()+" « "+t+" »");
+  mutate({k:"addEvent", v:ev}, "Ajout "+TYPE_LABEL[ev.type].toLowerCase()+" « "+t+" »");
 });
 
 /* ==================== TÂCHES DE PRÉPARATION ==================== */
@@ -1552,9 +1613,7 @@ function renderTasks(){
       const cb = el("input","tcheck");
       cb.type = "checkbox"; cb.checked = !!t.done;
       cb.setAttribute("aria-label","Marquer « "+t.t+" » comme "+(t.done?"à faire":"faite"));
-      cb.addEventListener("change",()=>mutate(
-      d=>{ const x = d.tasks.find(y=>y.id===t.id); if(x) x.done = cb.checked; },
-      (cb.checked?"Tâche faite":"Tâche à refaire")+" : "+t.t));
+      cb.addEventListener("change",()=>mutate({k:"setTask", id:t.id, done:cb.checked}, (cb.checked?"Tâche faite":"Tâche à refaire")+" : "+t.t));
       row.append(cb);
       row.append(el("span","tt",esc(t.t)));
       const [cls,txt] = dueBadge(t);
@@ -1562,8 +1621,7 @@ function renderTasks(){
       const del = el("button","del","✕");
       del.title = "Supprimer « "+t.t+" »";
       del.setAttribute("aria-label","Supprimer la tâche "+t.t);
-      del.addEventListener("click",()=>mutate(
-        d=>{ d.tasks = d.tasks.filter(x=>x.id!==t.id); }, "Suppression tâche « "+t.t+" »"));
+      del.addEventListener("click",()=>mutate({k:"delTask", id:t.id}, "Suppression tâche « "+t.t+" »"));
       row.append(del);
       grp.append(row);
     });
@@ -1593,7 +1651,7 @@ document.getElementById("taskForm").addEventListener("submit",()=>{
   const ev = evId ? allEvents().find(e=>e.id===evId) : null;
   const task = {id:"t"+Date.now(), t, due, done:false,
     evLabel: ev?ev.t:null, evDate: ev?ev.start:null};
-  mutate(d=>{ d.tasks.push(task); }, "Ajout tâche « "+t+" »");
+  mutate({k:"addTask", v:task}, "Ajout tâche « "+t+" »");
 });
 
 /* ==================== HEATMAP RECRUTEMENT ==================== */
@@ -1731,13 +1789,13 @@ function renderAll(){
   renderKPI(); renderMarkets(); renderPipeline();
   renderCalendar(); renderTasks(); renderAlerts();
   renderHeat(); renderCharts(); renderSyncBar();
-  document.body.classList.toggle("readonly", !canEdit());
   if(monthModal.open && currentDetailMonth!=null) renderMonthModal(currentDetailMonth);
 }
 const refresh = renderAll;
 
 (async function boot(){
   await pullRemote();
+  if(pending.length && canEdit()) publish();
   /* rafraîchissement automatique : au retour sur l'onglet + toutes les 60 s */
   setInterval(()=>{ if(!document.hidden && syncState!=="save") pullRemote(true); }, 60000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden && syncState!=="save") pullRemote(true); });
