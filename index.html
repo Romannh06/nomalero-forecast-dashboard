@@ -1063,6 +1063,7 @@ const REPO = {owner:"Romannh06", repo:"nomalero-forecast-dashboard", path:"data.
 const TOK_KEY = "nomalero_gh_token", USER_KEY = "nomalero_gh_user", CACHE_KEY = "nomalero_cache_v2";
 const API = "https://api.github.com/repos/"+REPO.owner+"/"+REPO.repo+"/contents/"+REPO.path;
 const PAGES_URL = "https://romannh06.github.io/nomalero-forecast-dashboard/";
+const RAW = "https://raw.githubusercontent.com/"+REPO.owner+"/"+REPO.repo+"/"+REPO.branch+"/"+REPO.path;
 
 const DEFAULTS = JSON.parse(document.getElementById("bootData").textContent);
 let DATA = null, remoteSha = null, syncState = "load", syncDetail = "";
@@ -1090,6 +1091,24 @@ const allEvents = ()=>DATA.events;
 const b64enc = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
 const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g,"")), c=>c.charCodeAt(0)));
 
+/* Lecture publique : on passe par raw.githubusercontent.com.
+   L'API GitHub limite les appels anonymes et ses réponses d'erreur n'ont pas
+   d'en-tête CORS — le navigateur bloquait alors la lecture. raw n'a ni quota
+   ni restriction, donc n'importe qui peut consulter le dashboard. */
+async function readShared(){
+  try{
+    const r = await fetch(RAW+"?cb="+Date.now(), {cache:"no-store"});
+    if(r.status === 404) return {missing:true};
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return {data: await r.json()};
+  }catch(e){
+    if(!token()) throw new Error("Source partagée injoignable (vérifie ta connexion).");
+    const j = await ghRead();                 // repli authentifié
+    return j.missing ? {missing:true} : {data:j.data};
+  }
+}
+
+/* Lecture authentifiée via l'API : sert à récupérer le sha avant d'écrire. */
 async function ghRead(){
   const h = {"Accept":"application/vnd.github+json"};
   if(token()) h.Authorization = "Bearer "+token();
@@ -1192,10 +1211,10 @@ async function publish(){
 async function pullRemote(silent){
   if(!silent) setSync("load");
   try{
-    const r = await ghRead();
+    const r = await readShared();
     if(r.missing) throw new Error("Fichier partagé absent du repo.");
-    if(r.sha !== remoteSha){
-      baseData = r.data; remoteSha = r.sha; cacheLocal(); rebuild(); renderAll();
+    if(JSON.stringify(r.data) !== JSON.stringify(baseData)){
+      baseData = r.data; cacheLocal(); rebuild(); renderAll();
     }
     setSync(pending.length ? "pending" : "ok");
   }catch(e){
