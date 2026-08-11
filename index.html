@@ -154,7 +154,8 @@
   .evlist::-webkit-scrollbar-track{background:transparent}
   .more-note{font-size:10.5px;color:var(--ink-3);text-align:center;flex:none}
   .month.now{border-color:var(--orange);box-shadow:0 0 0 1px var(--orange) inset}
-  .month .mh{display:flex;align-items:center;justify-content:space-between}
+  .month .mh{display:flex;align-items:center;gap:6px}
+  .month .mh .mname{margin-right:auto}
   .month .mh b{font-size:13.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
   .month.now .mh b{color:var(--orange)}
   .mname{background:none;border:none;color:inherit;padding:0;font-family:var(--font);cursor:pointer;display:inline-flex;align-items:center;gap:7px}
@@ -213,6 +214,32 @@
   .mm-cols h4{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);margin-bottom:8px}
   .mm-cols .ev + .ev,.mm-cols .task + .task{margin-top:4px}
   @media (max-width:760px){.mm-cols{grid-template-columns:1fr}.mm-day{min-height:56px}}
+
+  /* ---------- prérequis de passage ---------- */
+  .gates{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px;align-items:start}
+  .gate{background:var(--tile-2);border:1px solid var(--line);border-radius:8px;padding:12px 13px}
+  .gate.urgent{border-color:rgba(239,68,68,.45)}
+  .gate.ready{border-color:rgba(52,211,153,.38)}
+  .gate .gh{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .gate .gh b{font-size:13.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+  .gate .cnt{font-size:11.5px;font-weight:800;color:var(--orange-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .gate.ready .cnt{color:var(--green)}
+  .gate .when{font-size:11px;font-weight:700;color:var(--ink-3);margin-top:2px}
+  .gate.urgent .when{color:#f87171}
+  .gbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin:9px 0 4px}
+  .gbar i{display:block;height:100%;background:var(--orange);border-radius:2px;transition:width .3s}
+  .gate.ready .gbar i{background:var(--green)}
+  .pq{display:flex;align-items:center;gap:9px;padding:7px 2px}
+  .pq + .pq{border-top:1px solid var(--line)}
+  .pq .pt{flex:1;font-size:12.5px;font-weight:600;line-height:1.35}
+  .pq.done .pt{color:var(--ink-3);text-decoration:line-through}
+  .pq .del{visibility:hidden;background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
+  .pq:hover .del,.pq .del:focus-visible{visibility:visible}
+  .pq .del:hover{color:var(--red)}
+  .gflag{font-size:9.5px;font-weight:800;border-radius:5px;padding:2px 6px;font-variant-numeric:tabular-nums;
+         background:rgba(249,115,22,.15);color:var(--orange-soft);border:1px solid rgba(249,115,22,.35);white-space:nowrap}
+  .gflag.ok{background:rgba(52,211,153,.13);color:var(--green);border-color:rgba(52,211,153,.35)}
+  .gflag.late{background:rgba(239,68,68,.15);color:#f87171;border-color:rgba(239,68,68,.4)}
 
   /* ---------- tasks / préparation ---------- */
   .tasks-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -399,6 +426,15 @@
     <div class="cal-grid" id="calendar"></div>
   </section>
 
+  <!-- ============ PRÉREQUIS ============ -->
+  <section class="tile panel">
+    <div class="tasks-head">
+      <h2>Prérequis — ce qui doit être bouclé avant d'entrer dans le mois</h2>
+      <button class="btn-add" id="btnAddPrereq">+ Ajouter un prérequis</button>
+    </div>
+    <div class="gates" id="gates"></div>
+  </section>
+
   <!-- ============ TASKS ============ -->
   <section class="tile panel">
     <div class="tasks-head">
@@ -516,7 +552,27 @@
     <div><h4>Événements du mois</h4><div id="mmEvents"></div></div>
     <div><h4>Tâches du mois</h4><div id="mmTasks"></div></div>
   </div>
+  <div id="mmGate" style="margin-top:16px"></div>
   <p class="hint" style="margin-top:12px">Astuce : clique sur une case jour pour ajouter un événement à cette date.</p>
+</dialog>
+
+<dialog id="prereqModal">
+  <h3>Prérequis <span id="pqMonthLabel"></span></h3>
+  <form method="dialog" id="prereqForm">
+    <div class="field">
+      <label for="pqMonth">À finir avant le mois de</label>
+      <select id="pqMonth"></select>
+    </div>
+    <div class="field">
+      <label for="pqTitle">Ce qui doit être prêt</label>
+      <input id="pqTitle" type="text" required maxlength="90" placeholder="Ex : Créative Stratégiste recruté et opérationnel">
+    </div>
+    <p class="hint">Échéance implicite : le dernier jour du mois précédent. Une alerte apparaît à 30 jours s'il reste des prérequis non finis.</p>
+    <div class="mbtns">
+      <button type="button" class="btn btn-s" id="pqCancel">Annuler</button>
+      <button type="submit" class="btn btn-p">Ajouter</button>
+    </div>
+  </form>
 </dialog>
 
 <dialog id="taskModal">
@@ -989,6 +1045,7 @@
       "end": null
     }
   ],
+  "prereqs": [],
   "tasks": []
 }
 </script>
@@ -1023,6 +1080,7 @@ function applyData(){
   ROLES = DATA.roles;
   if(!DATA.tasks) DATA.tasks = [];
   if(!DATA.events) DATA.events = [];
+  if(!DATA.prereqs) DATA.prereqs = [];
   HIRES_BY_MONTH = MONTHS.map((_,i)=>ROLES.reduce((s,r)=>s+(r.m[i]||0),0));
   TOTAL_HIRES = HIRES_BY_MONTH.reduce((a,b)=>a+b,0);
 }
@@ -1073,7 +1131,11 @@ const cacheLocal   = ()=>{ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(b
 let baseData = null;   // dernière version connue du fichier partagé
 
 function applyOp(d, op){
-  if(op.k === "addEvent")  d.events.push(op.v);
+  if(!d.prereqs) d.prereqs = [];
+  if(op.k === "addPrereq") d.prereqs.push(op.v);
+  else if(op.k === "delPrereq") d.prereqs = d.prereqs.filter(x=>x.id !== op.id);
+  else if(op.k === "setPrereq"){ const p = d.prereqs.find(x=>x.id === op.id); if(p) p.done = op.done; }
+  else if(op.k === "addEvent")  d.events.push(op.v);
   else if(op.k === "delEvent") d.events = d.events.filter(x=>x.id !== op.id);
   else if(op.k === "addTask")  d.tasks.push(op.v);
   else if(op.k === "delTask")  d.tasks = d.tasks.filter(x=>x.id !== op.id);
@@ -1085,6 +1147,7 @@ function rebuild(){
   DATA = JSON.parse(JSON.stringify(baseData));
   if(!DATA.events) DATA.events = [];
   if(!DATA.tasks)  DATA.tasks  = [];
+  if(!DATA.prereqs) DATA.prereqs = [];
   pending.forEach(op=>applyOp(DATA, op));
   applyData();
 }
@@ -1106,6 +1169,7 @@ async function publish(){
     const base = cur.missing ? JSON.parse(JSON.stringify(DEFAULTS)) : cur.data;
     if(!base.events) base.events = [];
     if(!base.tasks)  base.tasks  = [];
+    if(!base.prereqs) base.prereqs = [];
     const batch = pending.slice();
     batch.forEach(op=>applyOp(base, op));
     base.updatedAt = new Date().toISOString();
@@ -1374,7 +1438,21 @@ function renderAlerts(){
     box.append(el("span","chip",b+esc(t.t)+' <small>'+fmtDay(t.due)+(t.evLabel?" · "+esc(t.evLabel):"")+'</small>'));
     taskShown++;
   });
-  if(!shown && !taskShown && !running.length) box.append(el("span","no-alert","Aucune alerte — prochaine échéance à plus de 30 jours."));
+  /* mois qui approche avec des prérequis non bouclés */
+  let gateShown = 0;
+  [...new Set(DATA.prereqs.map(p=>p.m))].sort((a,b)=>a-b).forEach(m=>{
+    if(gateShown>=2) return;
+    const st = gateStatus(m);
+    if(st.ready || !st.total) return;
+    const reste = st.total - st.done;
+    if(st.days > 30) return;
+    const b = st.days<=0 ? '<span class="badge b15">EN RETARD</span>'
+            : st.days<=15 ? '<span class="badge b15">J-'+st.days+'</span>'
+                          : '<span class="badge b30">J-'+st.days+'</span>';
+    box.append(el("span","chip", b+"⚑ "+MONTHS[m]+' <small>'+reste+' prérequis à boucler</small>'));
+    gateShown++;
+  });
+  if(!shown && !taskShown && !gateShown && !running.length) box.append(el("span","no-alert","Aucune alerte — prochaine échéance à plus de 30 jours."));
 }
 
 /* ==================== MARCHÉS & PIPELINE ==================== */
@@ -1415,6 +1493,14 @@ function renderCalendar(){
     nameBtn.setAttribute("aria-label","Ouvrir l'aperçu détaillé de "+name);
     nameBtn.addEventListener("click",()=>openMonthModal(mi));
     head.append(nameBtn);
+    const st = gateStatus(mi);
+    if(st.total){
+      const flag = el("span","gflag"+(st.ready?" ok":(st.urgent||st.passed?" late":"")),
+        "⚑ "+st.done+"/"+st.total);
+      flag.title = st.ready ? "Tous les prérequis sont prêts avant "+name
+                            : (st.total-st.done)+" prérequis à boucler avant "+name;
+      head.append(flag);
+    }
     const add = el("button","addbtn","+");
     add.title = "Ajouter un événement en "+name;
     add.setAttribute("aria-label","Ajouter un événement en "+name);
@@ -1523,6 +1609,42 @@ function renderMonthModal(mi){
     row.append(del);
     evBox.append(row);
   });
+  /* prérequis d'entrée dans le mois */
+  const gBox = document.getElementById("mmGate");
+  gBox.innerHTML = "";
+  const gst = gateStatus(mi);
+  const gh4 = el("h4",null,"Prérequis avant "+MONTHS[mi]);
+  gh4.style.cssText = "font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);margin-bottom:8px";
+  gBox.append(gh4);
+  if(!gst.total){
+    const empty = el("div","empty-month","— aucun prérequis défini");
+    gBox.append(empty);
+  } else {
+    const g = el("div","gate"+(gst.ready?" ready":"")+(gst.urgent?" urgent":""));
+    const gh = el("div","gh","<b>"+gst.done+" / "+gst.total+" prêts</b>");
+    gh.append(el("span","cnt", gst.ready ? "Tout est prêt" : (gst.total-gst.done)+" à boucler"));
+    g.append(gh);
+    const bar = el("div","gbar"); const fill = el("i");
+    fill.style.width = Math.round(gst.done/gst.total*100)+"%"; bar.append(fill); g.append(bar);
+    gst.list.forEach(p=>{
+      const row = el("div","pq"+(p.done?" done":""));
+      const cb = el("input","tcheck"); cb.type="checkbox"; cb.checked=!!p.done;
+      cb.setAttribute("aria-label","Marquer « "+p.t+" » comme "+(p.done?"à faire":"prêt"));
+      cb.addEventListener("change",()=>mutate({k:"setPrereq", id:p.id, done:cb.checked},
+        (cb.checked?"Prérequis prêt":"Prérequis à refaire")+" : "+p.t));
+      row.append(cb); row.append(el("span","pt",esc(p.t)));
+      const del = el("button","del","✕");
+      del.title = "Supprimer « "+p.t+" »";
+      del.addEventListener("click",()=>mutate({k:"delPrereq", id:p.id}, "Suppression prérequis « "+p.t+" »"));
+      row.append(del); g.append(row);
+    });
+    gBox.append(g);
+  }
+  const addPq = el("button","btn-ghost","+ Prérequis avant "+MONTHS[mi]);
+  addPq.style.marginTop = "10px";
+  addPq.addEventListener("click",()=>openPrereqDialog(mi));
+  gBox.append(addPq);
+
   const tkBox = document.getElementById("mmTasks");
   tkBox.innerHTML = "";
   if(!tks.length) tkBox.append(el("div","empty-month","— aucune tâche à échéance ce mois-ci"));
@@ -1567,6 +1689,96 @@ document.getElementById("evForm").addEventListener("submit",()=>{
   if(end && D(end)<D(start)) end = null;
   const ev = {id:"c"+Date.now(), t, type:document.getElementById("fType").value, start, end};
   mutate({k:"addEvent", v:ev}, "Ajout "+TYPE_LABEL[ev.type].toLowerCase()+" « "+t+" »");
+});
+
+/* ==================== PRÉREQUIS DE PASSAGE ====================
+   Un prérequis est rattaché à un MOIS : il doit être bouclé avant
+   d'y entrer. Échéance = dernier jour du mois précédent. */
+const gateDate  = m => new Date(2026, m, 1);                 // début du mois visé
+const gateDays  = m => Math.round((gateDate(m)-TODAY)/86400000);
+/* dernier jour du mois précédent, en date locale (pas d'UTC : décalerait d'un jour) */
+const gateDeadline = m => {
+  const d = new Date(2026, m, 0);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+};
+const prereqsOf = m => DATA.prereqs.filter(p=>p.m===m);
+
+function gateStatus(m){
+  const list = prereqsOf(m), done = list.filter(p=>p.done).length, d = gateDays(m);
+  const ready = list.length>0 && done===list.length;
+  return {list, done, total:list.length, days:d, ready,
+          urgent: !ready && list.length>0 && d<=15,
+          passed: d<=0};
+}
+
+function renderGates(){
+  const box = document.getElementById("gates");
+  box.innerHTML = "";
+  const months = [...new Set(DATA.prereqs.map(p=>p.m))]
+    .filter(m=>gateDays(m) > -31)          // on garde le mois en cours
+    .sort((a,b)=>a-b);
+  if(!months.length){
+    box.append(el("div","tasks-empty",
+      'Aucun prérequis pour l’instant. Clique sur <b>+ Ajouter un prérequis</b> — par exemple « Créative Stratégiste recruté » à finir avant septembre.'));
+    return;
+  }
+  months.forEach(m=>{
+    const st = gateStatus(m);
+    const g = el("div","gate"+(st.ready?" ready":"")+(st.urgent?" urgent":""));
+    const gh = el("div","gh","<b>Avant "+MONTHS[m]+"</b>");
+    gh.append(el("span","cnt",st.done+"/"+st.total+" prêts"));
+    g.append(gh);
+    g.append(el("div","when", st.passed
+      ? (st.ready ? "Mois entamé — tout était prêt" : "Mois entamé — "+(st.total-st.done)+" prérequis non bouclé"+(st.total-st.done>1?"s":""))
+      : "Démarre dans "+st.days+" jour"+(st.days>1?"s":"")+" — à boucler pour le "+fmtDay(gateDeadline(m))));
+    const bar = el("div","gbar"); const fill = el("i");
+    fill.style.width = (st.total?Math.round(st.done/st.total*100):0)+"%";
+    bar.append(fill); g.append(bar);
+    st.list.forEach(p=>{
+      const row = el("div","pq"+(p.done?" done":""));
+      const cb = el("input","tcheck");
+      cb.type = "checkbox"; cb.checked = !!p.done;
+      cb.setAttribute("aria-label","Marquer « "+p.t+" » comme "+(p.done?"à faire":"prêt"));
+      cb.addEventListener("change",()=>mutate({k:"setPrereq", id:p.id, done:cb.checked},
+        (cb.checked?"Prérequis prêt":"Prérequis à refaire")+" : "+p.t));
+      row.append(cb);
+      row.append(el("span","pt",esc(p.t)));
+      const del = el("button","del","✕");
+      del.title = "Supprimer « "+p.t+" »";
+      del.setAttribute("aria-label","Supprimer le prérequis "+p.t);
+      del.addEventListener("click",()=>mutate({k:"delPrereq", id:p.id}, "Suppression prérequis « "+p.t+" »"));
+      row.append(del);
+      g.append(row);
+    });
+    box.append(g);
+  });
+}
+
+/* modal prérequis */
+const prereqModal = document.getElementById("prereqModal");
+function openPrereqDialog(month){
+  const sel = document.getElementById("pqMonth");
+  sel.innerHTML = "";
+  MONTHS.forEach((name,i)=>{
+    if(gateDays(i) <= -31) return;            // mois déjà passés
+    const o = document.createElement("option");
+    o.value = i; o.textContent = name+" 2026"+(gateDays(i)>0?" — dans "+gateDays(i)+" j":" — en cours");
+    sel.append(o);
+  });
+  const nextM = month!=null ? month
+    : (MONTHS.findIndex((_,i)=>gateDays(i)>0) >= 0 ? MONTHS.findIndex((_,i)=>gateDays(i)>0) : 0);
+  sel.value = String(nextM);
+  document.getElementById("pqTitle").value = "";
+  prereqModal.showModal();
+}
+document.getElementById("btnAddPrereq").addEventListener("click",()=>openPrereqDialog());
+document.getElementById("pqCancel").addEventListener("click",()=>prereqModal.close());
+document.getElementById("prereqForm").addEventListener("submit",()=>{
+  const t = document.getElementById("pqTitle").value.trim();
+  const m = parseInt(document.getElementById("pqMonth").value,10);
+  if(!t || isNaN(m)) return;
+  const v = {id:"p"+Date.now(), m, t, done:false};
+  mutate({k:"addPrereq", v}, "Ajout prérequis « "+t+" » avant "+MONTHS[m]);
 });
 
 /* ==================== TÂCHES DE PRÉPARATION ==================== */
@@ -1787,7 +1999,7 @@ function chMargin(){
 /* ==================== RENDU GLOBAL & DÉMARRAGE ==================== */
 function renderAll(){
   renderKPI(); renderMarkets(); renderPipeline();
-  renderCalendar(); renderTasks(); renderAlerts();
+  renderCalendar(); renderGates(); renderTasks(); renderAlerts();
   renderHeat(); renderCharts(); renderSyncBar();
   if(monthModal.open && currentDetailMonth!=null) renderMonthModal(currentDetailMonth);
 }
