@@ -1284,6 +1284,12 @@ function renderSyncBar(){
   const reload = el("button","btn-ghost","Actualiser");
   reload.addEventListener("click",()=>pullRemote());
   actions.append(reload);
+  if(!canEdit() && !n){
+    const key = el("button","btn-ghost","🔑 Enregistrer ma clé de partage");
+    key.title = "Nécessaire une seule fois pour que tes modifications soient visibles par l'équipe";
+    key.addEventListener("click",()=>openSyncDialog());
+    actions.append(key);
+  }
   if(canEdit()){
     const out = el("button","btn-ghost","Clé active : "+esc(whoAmI()));
     out.title = "Retirer la clé de ce navigateur";
